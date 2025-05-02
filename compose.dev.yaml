@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: memora-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - memora-network
+
+  backend:
+    build:
+      context: ../memora_back_end
+      dockerfile: Dockerfile
+    container_name: memora-backend
+    env_file: ../memora_back_end/.env
+    environment:
+      - PORT=8186
+      - DB_CONNECTION_STRING=mongodb://mongodb:27017/memora
+    ports:
+      - "8186:8186"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - memora-network
+
+  frontend:
+    build:
+      context: ../memora_front_end
+      dockerfile: Dockerfile
+    container_name: memora-frontend
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../memora_front_end:/frontend #../memora_front_end" on my computer should be accessible at /frontend inside the container
+      - /frontend/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://backend:8186
+    depends_on:
+      - backend
+    networks:
+      - memora-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  memora-network:
+    driver: bridge
