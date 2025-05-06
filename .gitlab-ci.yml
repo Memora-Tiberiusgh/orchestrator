@@ -1,15 +1,10 @@
 # Reusable SSH setup script
 .before_script_ssh_setup: &before_script_ssh_setup
-  # Ensure ssh-agent is installed and started
   - command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )
-  # Start the ssh-agent in the background
   - eval $(ssh-agent -s)
-  # Add the SSH private key stored in the SSH_PRIVATE_KEY variable to the ssh-agent
   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-  # Create the .ssh directory and set the correct permissions
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
-  # Add the remote server's SSH key to the known_hosts file
   - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
   - chmod 644 ~/.ssh/known_hosts
 
@@ -26,22 +21,21 @@ deploy:
   before_script: *before_script_ssh_setup
   script:
     - echo "Deploying to server..."
-    # Copy docker-compose.yaml to the server
     - scp docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
-    # Run commands on the remote server
-    - ssh $SSH_USER@$SSH_HOST "
-      cd /var/www/html/memora
-      # Pull orchestrating repo
-      cd ./docker-compose-config && git pull && cd ..
-      # Pull backend repo
-      cd ./memora_back_end && git pull && cd ..
-      # Pull frontend repo
-      cd ./memora_front_end && git pull && cd ..
-      # Copy docker-compose.yaml to the orchestration directory
-      cp /var/www/html/memora/docker-compose.yaml /var/www/html/memora/docker-compose-config/
-      # Navigate to orchestration directory and start the application
-      cd /var/www/html/memora/docker-compose-config
-      docker-compose up -d --build
+    - |
+      ssh $SSH_USER@$SSH_HOST "
+        cd /var/www/html/memora
+        # Pull orchestrating repo
+        cd ./docker-compose-config && git pull && cd ..
+        # Pull backend repo
+        cd ./memora_back_end && git pull && cd ..
+        # Pull frontend repo
+        cd ./memora_front_end && git pull && cd ..
+        # Copy docker-compose.yaml to the orchestration directory
+        cp /var/www/html/memora/docker-compose.yaml /var/www/html/memora/docker-compose-config/
+        # Navigate to orchestration directory and start the application
+        cd /var/www/html/memora/docker-compose-config
+        docker-compose up -d --build
       "
   only:
     - main
