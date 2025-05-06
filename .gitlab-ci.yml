@@ -1,62 +1,30 @@
 stages:
-  - deploy
+ - deploy
 
 deploy:
-  stage: deploy
-  image: docker:20.10.16
-  before_script:
-    - apk add --no-cache openssh-client git
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $SSH_HOST > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
-  script:
-    # SSH to server and set up project structure
-    - |
-      ssh $SSH_USER@$SSH_HOST "mkdir -p $DEPLOY_PATH"
-    
-    # Copy docker-compose.yml to the server
-    - scp docker-compose.yml $SSH_USER@$SSH_HOST:$DEPLOY_PATH/
-    
-    # Clone/pull repositories and deploy
-    - |
-      ssh $SSH_USER@$SSH_HOST "
-        # Create parent directory for all repos
-        mkdir -p $DEPLOY_PATH/memora
-        cd $DEPLOY_PATH/memora
-        
-        # Clone/pull orchestrating repo
-        if [ ! -d ./memora_orchestration ]; then
-          git clone $ORCHESTRATING_REPO_URL ./memora_orchestration
-        else
-          cd ./memora_orchestration && git pull && cd ..
-        fi
-        
-        # Clone/pull backend repo
-        if [ ! -d ./memora_back_end ]; then
-          git clone $BACKEND_REPO_URL ./memora_back_end
-        else
-          cd ./memora_back_end && git pull && cd ..
-        fi
-        
-        # Clone/pull frontend repo
-        if [ ! -d ./memora_front_end ]; then
-          git clone $FRONTEND_REPO_URL ./memora_front_end
-        else
-          cd ./memora_front_end && git pull && cd ..
-        fi
-        
-        # Copy docker-compose.yml to the directory structure
-        cp $DEPLOY_PATH/docker-compose.yml $DEPLOY_PATH/memora/memora_orchestration/
-        
-        # Navigate to orchestration directory and start the application
-        cd $DEPLOY_PATH/memora/memora_orchestration
-        docker-compose up -d --build
-      "
-  environment:
-    name: production
-  only:
-    - main
+ stage: deploy
+ image: docker:20.10.16
+ before_script:
+ - apk add --no-cache openssh-client git
+ - chmod 400 $SSH_KEY
+ script:
+ # Copy docker-compose.yaml to the server
+ - scp -i $SSH_KEY docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
+ # Pull repositories and deploy
+ - |
+   ssh -o StrictHostKeyChecking=no -i $SSH_KEY $SSH_USER@$SSH_HOST "
+   cd /var/www/html/memora
+   # Pull orchestrating repo
+   cd ./docker-compose-config && git pull && cd ..
+   # Pull backend repo
+   cd ./memora_back_end && git pull && cd ..
+   # Pull frontend repo
+   cd ./memora_front_end && git pull && cd ..
+   # Copy docker-compose.yaml to the directory structure
+   cp /var/www/html/memora/docker-compose.yaml /var/www/html/memora/docker-compose-config/
+   # Navigate to orchestration directory and start the application
+   cd /var/www/html/memora/docker-compose-config
+   docker-compose up -d --build
+   "
+ only:
+ - main
