@@ -11,8 +11,8 @@ deploy:
  - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
  - chmod 400 ~/.ssh/id_rsa
  script:
- # Copy docker-compose.yaml to the server
- - scp -i ~/.ssh/id_rsa docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
+ # Copy docker-compose.yaml to the server with disabled host key checking
+ - scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
  # Pull repositories and deploy
  - |
    ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $SSH_USER@$SSH_HOST "
