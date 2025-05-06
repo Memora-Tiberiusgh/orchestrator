@@ -6,13 +6,16 @@ deploy:
  image: docker:20.10.16
  before_script:
  - apk add --no-cache openssh-client git
- - chmod 400 $SSH_KEY
+ # Create SSH directory and key file
+ - mkdir -p ~/.ssh
+ - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+ - chmod 400 ~/.ssh/id_rsa
  script:
  # Copy docker-compose.yaml to the server
- - scp -i $SSH_KEY docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
+ - scp -i ~/.ssh/id_rsa docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
  # Pull repositories and deploy
  - |
-   ssh -o StrictHostKeyChecking=no -i $SSH_KEY $SSH_USER@$SSH_HOST "
+   ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $SSH_USER@$SSH_HOST "
    cd /var/www/html/memora
    # Pull orchestrating repo
    cd ./docker-compose-config && git pull && cd ..
