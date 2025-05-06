@@ -15,39 +15,24 @@ deploy:
  script:
  - |
    ssh $SSH_USER@$SSH_HOST "
-   # Check all installed Docker-related commands
-   echo '=== Docker Commands ==='
-   which docker || echo 'docker not found'
-   which docker-compose || echo 'docker-compose not found'
+   cd /var/www/html/memora
    
-   # Check if it's installed but not in PATH
-   echo '=== Finding docker-compose ==='
-   find / -name docker-compose 2>/dev/null || echo 'No docker-compose found on filesystem'
+   # Pull orchestrating repo
+   echo 'Updating docker-compose-config...'
+   cd ./docker-compose-config && git pull && cd ..
    
-   # Check if it's available through snap
-   echo '=== Checking snap ==='
-   snap list | grep docker || echo 'docker not found in snap packages'
+   # Pull backend repo
+   echo 'Updating memora_back_end...'
+   cd ./memora_back_end && git pull && cd ..
    
-   # Check if Docker Compose is installed as a Docker plugin
-   echo '=== Checking Docker plugins ==='
-   docker plugin ls 2>/dev/null || echo 'Cannot list Docker plugins'
+   # Pull frontend repo
+   echo 'Updating memora_front_end...'
+   cd ./memora_front_end && git pull && cd ..
    
-   # Check PATH variable to ensure we know where to look
-   echo '=== PATH variable ==='
-   echo \$PATH
-   
-   # Check in common Docker installation directories
-   echo '=== Common Docker locations ==='
-   ls -la /usr/bin/docker* 2>/dev/null || echo 'No docker binaries in /usr/bin'
-   ls -la /usr/local/bin/docker* 2>/dev/null || echo 'No docker binaries in /usr/local/bin'
-   
-   # Check Docker binary version to determine if compose is a plugin
-   echo '=== Docker version ==='
-   docker --version 2>/dev/null || echo 'Docker version command failed'
-   
-   # Try listing Docker Compose plugins
-   echo '=== Docker Compose plugin ==='
-   docker compose version 2>/dev/null || echo 'Docker Compose plugin not available'
+   # Navigate to orchestration directory and run docker compose
+   echo 'Starting application with docker compose...'
+   cd /var/www/html/memora/docker-compose-config
+   docker compose up -d --build
    "
  only:
  - main
