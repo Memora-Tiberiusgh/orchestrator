@@ -7,26 +7,27 @@ deploy:
  before_script:
  - apk add --no-cache openssh-client git
  - mkdir -p ~/.ssh
- # Write the key to a file with proper line breaks
  - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
  - chmod 600 ~/.ssh/id_rsa
  - eval $(ssh-agent -s)
  - ssh-add ~/.ssh/id_rsa
  - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
  script:
- # Skip the file copy and go straight to repository updates
+ # Check the directory structure first
  - |
    ssh $SSH_USER@$SSH_HOST "
-   cd /var/www/html/memora
-   # Pull orchestrating repo
-   cd ./docker-compose-config && git pull && cd ..
-   # Pull backend repo
-   cd ./memora_back_end && git pull && cd ..
-   # Pull frontend repo
-   cd ./memora_front_end && git pull && cd ..
-   # Navigate to orchestration directory and start the application
-   cd /var/www/html/memora/docker-compose-config
-   docker-compose up -d --build
+   echo 'Checking directory structure:'
+   ls -la /var/www/html/
+   echo '-------------------'
+   if [ -d /var/www/html/memora ]; then
+     echo 'Directory /var/www/html/memora exists, checking content:'
+     ls -la /var/www/html/memora/
+   else
+     echo 'Directory /var/www/html/memora does NOT exist!'
+   fi
+   echo '-------------------'
+   echo 'Checking for docker-compose:'
+   which docker-compose || echo 'docker-compose not found'
    "
  only:
  - main
