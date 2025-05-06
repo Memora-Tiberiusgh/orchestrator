@@ -15,24 +15,32 @@ deploy:
  script:
  - |
    ssh $SSH_USER@$SSH_HOST "
-   cd /var/www/html/memora
-   
-   # Pull orchestrating repo
+   # Use absolute paths to avoid directory navigation issues
    echo 'Updating docker-compose-config...'
-   cd ./docker-compose-config && git pull && cd ..
+   cd /var/www/html/memora/docker-compose-config && git pull
    
-   # Pull backend repo
    echo 'Updating memora_back_end...'
-   cd ./memora_back_end && git pull && cd ..
+   cd /var/www/html/memora/memora_back_end && git pull
    
-   # Pull frontend repo
    echo 'Updating memora_front_end...'
-   cd ./memora_front_end && git pull && cd ..
+   cd /var/www/html/memora/memora_front_end && git pull
    
-   # Navigate to orchestration directory and run docker compose
+   # Navigate to orchestration directory and check for the compose file
    echo 'Starting application with docker compose...'
    cd /var/www/html/memora/docker-compose-config
-   docker compose up -d --build
+   ls -la
+   
+   # Check for compose file and run if it exists
+   if [ -f docker-compose.yaml ]; then
+     echo 'Found docker-compose.yaml'
+     docker compose -f docker-compose.yaml up -d --build
+   elif [ -f docker-compose.yml ]; then
+     echo 'Found docker-compose.yml'
+     docker compose -f docker-compose.yml up -d --build
+   else
+     echo 'ERROR: No docker-compose file found!'
+     ls -la
+   fi
    "
  only:
  - main
