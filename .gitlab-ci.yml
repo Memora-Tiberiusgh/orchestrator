@@ -24,42 +24,24 @@ deploy:
    # Pull orchestrating repo
    echo 'Updating docker-compose-config...'
    cd /var/www/html/memora/docker-compose-config
-   if [ -d .git ]; then
-     git pull
-   else
-     echo 'Not a git repository. Skipping pull.'
-   fi
+   git pull
    
    # Pull backend repo
    echo 'Updating memora_back_end...'
    cd /var/www/html/memora/memora_back_end
-   if [ -d .git ]; then
-     git pull
-   else
-     echo 'Not a git repository. Skipping pull.'
-   fi
+   git pull
    
    # Pull frontend repo
    echo 'Updating memora_front_end...'
    cd /var/www/html/memora/memora_front_end
-   if [ -d .git ]; then
-     git pull
-   else
-     echo 'Not a git repository. Skipping pull.'
-   fi
+   git pull
    
    # Navigate to orchestration directory and run docker compose
    echo 'Starting application with docker compose...'
    cd /var/www/html/memora/docker-compose-config
    
    # Use the dev compose file
-   if [ -f compose.dev.yaml ]; then
-     echo 'Using compose.dev.yaml'
-     docker compose -f compose.dev.yaml up -d --build
-   else
-     echo 'ERROR: compose.dev.yaml not found!'
-     ls -la
-   fi
+   docker compose -f compose.dev.yaml up -d --build
    
    # Print confirmation message
    echo 'Deployment completed!'
