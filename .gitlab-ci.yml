@@ -6,21 +6,18 @@ deploy:
  image: docker:20.10.16
  before_script:
  - apk add --no-cache openssh-client git
- # Create SSH directory
  - mkdir -p ~/.ssh
- # Ensure the key has a trailing newline
- - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
- - echo >> ~/.ssh/id_rsa  # Add an extra newline just to be sure
+ - cat > ~/.ssh/id_rsa << EOL
+   $SSH_PRIVATE_KEY
+   EOL
  - chmod 600 ~/.ssh/id_rsa
  - eval $(ssh-agent -s)
  - ssh-add ~/.ssh/id_rsa
  - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
  script:
- # Copy docker-compose.yaml to the server
- - scp docker-compose.yaml $SSH_USER@$SSH_HOST:/var/www/html/memora/
- # Pull repositories and deploy
+ # Skip the file copy and go straight to repository updates
  - |
-   ssh $SSH_USER@$SSH_HOST "
+   ssh -o "StrictHostKeyChecking no" $SSH_USER@$SSH_HOST "
    cd /var/www/html/memora
    # Pull orchestrating repo
    cd ./docker-compose-config && git pull && cd ..
@@ -28,8 +25,6 @@ deploy:
    cd ./memora_back_end && git pull && cd ..
    # Pull frontend repo
    cd ./memora_front_end && git pull && cd ..
-   # Copy docker-compose.yaml to the directory structure
-   cp /var/www/html/memora/docker-compose.yaml /var/www/html/memora/docker-compose-config/
    # Navigate to orchestration directory and start the application
    cd /var/www/html/memora/docker-compose-config
    docker-compose up -d --build
