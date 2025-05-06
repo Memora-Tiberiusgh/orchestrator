@@ -15,32 +15,54 @@ deploy:
  script:
  - |
    ssh $SSH_USER@$SSH_HOST "
-   # Use absolute paths to avoid directory navigation issues
+   cd /var/www/html/memora
+   
+   # Setup SSH for Git on the remote server
+   mkdir -p ~/.ssh
+   echo -e 'Host gitlab.com\n\tStrictHostKeyChecking no\n' >> ~/.ssh/config
+   
+   # Pull orchestrating repo
    echo 'Updating docker-compose-config...'
-   cd /var/www/html/memora/docker-compose-config && git pull
+   cd /var/www/html/memora/docker-compose-config
+   if [ -d .git ]; then
+     git pull
+   else
+     echo 'Not a git repository. Skipping pull.'
+   fi
    
+   # Pull backend repo
    echo 'Updating memora_back_end...'
-   cd /var/www/html/memora/memora_back_end && git pull
+   cd /var/www/html/memora/memora_back_end
+   if [ -d .git ]; then
+     git pull
+   else
+     echo 'Not a git repository. Skipping pull.'
+   fi
    
+   # Pull frontend repo
    echo 'Updating memora_front_end...'
-   cd /var/www/html/memora/memora_front_end && git pull
+   cd /var/www/html/memora/memora_front_end
+   if [ -d .git ]; then
+     git pull
+   else
+     echo 'Not a git repository. Skipping pull.'
+   fi
    
-   # Navigate to orchestration directory and check for the compose file
+   # Navigate to orchestration directory and run docker compose
    echo 'Starting application with docker compose...'
    cd /var/www/html/memora/docker-compose-config
-   ls -la
    
-   # Check for compose file and run if it exists
-   if [ -f docker-compose.yaml ]; then
-     echo 'Found docker-compose.yaml'
-     docker compose -f docker-compose.yaml up -d --build
-   elif [ -f docker-compose.yml ]; then
-     echo 'Found docker-compose.yml'
-     docker compose -f docker-compose.yml up -d --build
+   # Use the dev compose file
+   if [ -f compose.dev.yaml ]; then
+     echo 'Using compose.dev.yaml'
+     docker compose -f compose.dev.yaml up -d --build
    else
-     echo 'ERROR: No docker-compose file found!'
+     echo 'ERROR: compose.dev.yaml not found!'
      ls -la
    fi
+   
+   # Print confirmation message
+   echo 'Deployment completed!'
    "
  only:
  - main
