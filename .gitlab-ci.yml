@@ -13,21 +13,41 @@ deploy:
  - ssh-add ~/.ssh/id_rsa
  - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
  script:
- # Check the directory structure first
  - |
    ssh $SSH_USER@$SSH_HOST "
-   echo 'Checking directory structure:'
-   ls -la /var/www/html/
-   echo '-------------------'
-   if [ -d /var/www/html/memora ]; then
-     echo 'Directory /var/www/html/memora exists, checking content:'
-     ls -la /var/www/html/memora/
-   else
-     echo 'Directory /var/www/html/memora does NOT exist!'
-   fi
-   echo '-------------------'
-   echo 'Checking for docker-compose:'
+   # Check all installed Docker-related commands
+   echo '=== Docker Commands ==='
+   which docker || echo 'docker not found'
    which docker-compose || echo 'docker-compose not found'
+   
+   # Check if it's installed but not in PATH
+   echo '=== Finding docker-compose ==='
+   find / -name docker-compose 2>/dev/null || echo 'No docker-compose found on filesystem'
+   
+   # Check if it's available through snap
+   echo '=== Checking snap ==='
+   snap list | grep docker || echo 'docker not found in snap packages'
+   
+   # Check if Docker Compose is installed as a Docker plugin
+   echo '=== Checking Docker plugins ==='
+   docker plugin ls 2>/dev/null || echo 'Cannot list Docker plugins'
+   
+   # Check PATH variable to ensure we know where to look
+   echo '=== PATH variable ==='
+   echo \$PATH
+   
+   # Check in common Docker installation directories
+   echo '=== Common Docker locations ==='
+   ls -la /usr/bin/docker* 2>/dev/null || echo 'No docker binaries in /usr/bin'
+   ls -la /usr/local/bin/docker* 2>/dev/null || echo 'No docker binaries in /usr/local/bin'
+   
+   # Check Docker binary version to determine if compose is a plugin
+   echo '=== Docker version ==='
+   docker --version 2>/dev/null || echo 'Docker version command failed'
+   
+   # Try listing Docker Compose plugins
+   echo '=== Docker Compose plugin ==='
+   docker compose version 2>/dev/null || echo 'Docker Compose plugin not available'
    "
  only:
  - main
