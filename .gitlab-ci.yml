@@ -7,9 +7,8 @@ deploy:
  before_script:
  - apk add --no-cache openssh-client git
  - mkdir -p ~/.ssh
- - cat > ~/.ssh/id_rsa << EOL
-   $SSH_PRIVATE_KEY
-   EOL
+ # Write the key to a file with proper line breaks
+ - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
  - chmod 600 ~/.ssh/id_rsa
  - eval $(ssh-agent -s)
  - ssh-add ~/.ssh/id_rsa
@@ -17,7 +16,7 @@ deploy:
  script:
  # Skip the file copy and go straight to repository updates
  - |
-   ssh -o "StrictHostKeyChecking no" $SSH_USER@$SSH_HOST "
+   ssh $SSH_USER@$SSH_HOST "
    cd /var/www/html/memora
    # Pull orchestrating repo
    cd ./docker-compose-config && git pull && cd ..
