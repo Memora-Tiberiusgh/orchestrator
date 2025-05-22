@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: memora-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - memora-network
+
+  backend:
+    image: gitlab.lnu.se:5050/1dv613/student/tg222hh/memora/memora_back_end:latest
+    container_name: memora-backend
+    environment:
+      - PORT=8186
+      - DB_CONNECTION_STRING=mongodb://mongodb:27017/memora
+    env_file:
+      - .env
+    ports:
+      - "8186:8186"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - memora-network
+
+  frontend:
+    image: gitlab.lnu.se:5050/1dv613/student/tg222hh/memora/memora_front_end:latest
+    container_name: memora-frontend
+    ports:
+      - "5173:3000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://backend:8186
+    depends_on:
+      - backend
+    networks:
+      - memora-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  memora-network:
+    driver: bridge

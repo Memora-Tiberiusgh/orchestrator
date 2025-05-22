@@ -15,7 +15,7 @@ services:
   backend:
     build:
       context: ../memora_back_end
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: memora-backend
     env_file: ../memora_back_end/.env
     environment:
@@ -25,6 +25,9 @@ services:
       - "8186:8186"
     depends_on:
       - mongodb
+    volumes:
+      - ../memora_back_end:/backend
+      - /backend/node_modules
     restart: unless-stopped
     networks:
       - memora-network
@@ -32,9 +35,8 @@ services:
   frontend:
     build:
       context: ../memora_front_end
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: memora-frontend
-    command: npm run dev -- --host 0.0.0.0
     ports:
       - "5173:5173"
     volumes:
@@ -42,7 +44,7 @@ services:
       - /frontend/node_modules
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://backend:8186
+      - VITE_API_BASE_URL=http://localhost:8186
     depends_on:
       - backend
     networks:

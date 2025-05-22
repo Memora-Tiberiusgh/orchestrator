@@ -1,50 +1,65 @@
 stages:
- - deploy
+  - deploy
 
 deploy:
- stage: deploy
- image: docker:20.10.16
- before_script:
- - apk add --no-cache openssh-client git
- - mkdir -p ~/.ssh
- - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
- - chmod 600 ~/.ssh/id_rsa
- - eval $(ssh-agent -s)
- - ssh-add ~/.ssh/id_rsa
- - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
- script:
- - |
-   ssh $SSH_USER@$SSH_HOST "
-   cd /var/www/html/memora
-   
-   # Setup SSH for Git on the remote server
-   mkdir -p ~/.ssh
-   echo -e 'Host gitlab.com\n\tStrictHostKeyChecking no\n' >> ~/.ssh/config
-   
-   # Pull orchestrating repo
-   echo 'Updating docker-compose-config...'
-   cd /var/www/html/memora/docker-compose-config
-   git pull
-   
-   # Pull backend repo
-   echo 'Updating memora_back_end...'
-   cd /var/www/html/memora/memora_back_end
-   git pull
-   
-   # Pull frontend repo
-   echo 'Updating memora_front_end...'
-   cd /var/www/html/memora/memora_front_end
-   git pull
-   
-   # Navigate to orchestration directory and run docker compose
-   echo 'Starting application with docker compose...'
-   cd /var/www/html/memora/docker-compose-config
-   
-   # Use the dev compose file
-   docker compose -f compose.dev.yaml up -d --build
-   
-   # Print confirmation message
-   echo 'Deployment completed!'
-   "
- only:
- - main
+  stage: deploy
+  image: docker:20.10.16
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "/certs/client"
+  before_script:
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  script:
+    - scp docker-compose.yml $SSH_USER@$SSH_HOST:/var/www/html/memora/memora-compose.yml
+    - |
+      ssh $SSH_USER@$SSH_HOST "
+        cd /var/www/html/memora
+
+        # Create .env file from GitLab variable
+        echo '$ENV' > .env
+
+        # Set environment variables for the compose file
+        export FRONTEND_IMAGE=gitlab.lnu.se:5050/1dv613/student/tg222hh/memora/memora_front_end:latest
+        export BACKEND_IMAGE=gitlab.lnu.se:5050/1dv613/student/tg222hh/memora/memora_back_end:latest
+
+        # Log in to GitLab's Container Registry for frontend repository
+        echo 'Logging in to GitLab Container Registry for frontend...'
+        echo \"$DEPLOY_TOKEN_PASSWORD_FRONTEND\" | docker login gitlab.lnu.se:5050 -u \"$DEPLOY_TOKEN_USERNAME_FRONTEND\" --password-stdin
+
+        # Pull the frontend image
+        echo 'Pulling frontend image...'
+        docker pull \$FRONTEND_IMAGE || echo 'Failed to pull frontend image'
+
+        # Log in to GitLab's Container Registry for backend repository
+        echo 'Logging in to GitLab Container Registry for backend...'
+        echo \"$DEPLOY_TOKEN_PASSWORD_BACKEND\" | docker login gitlab.lnu.se:5050 -u \"$DEPLOY_TOKEN_USERNAME_BACKEND\" --password-stdin
+
+        # Pull the backend image
+        echo 'Pulling backend image...'
+        docker pull \$BACKEND_IMAGE || echo 'Failed to pull backend image'
+
+        # Start services using the new compose file
+        echo 'Starting services using memora-compose.yml...'
+        docker compose -f memora-compose.yml up -d --force-recreate
+
+        # Verify containers are running
+        echo 'Verifying containers are running:'
+        docker ps | grep memora
+
+        # Clean up sensitive files
+        rm memora-compose.yml .env
+
+        echo 'Deployment completed!'
+      "
+  only:
+    - main
