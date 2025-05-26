@@ -19,24 +19,23 @@ jobs:
         run: |
           echo "📦 Creating .env file..."
 
-          # Set default images
-          FRONTEND_IMG="ghcr.io/memora-tiberiusgh/frontend:latest"
-          BACKEND_IMG="ghcr.io/memora-tiberiusgh/backend:latest"
+          # Create .env from secret
+          cat > .env << 'EOF'
+          ${{ secrets.ENV_FILE }}
+          EOF
+
+          # Append image variables
+          echo "FRONTEND_IMAGE=ghcr.io/memora-tiberiusgh/frontend:latest" >> .env
+          echo "BACKEND_IMAGE=ghcr.io/memora-tiberiusgh/backend:latest" >> .env
 
           # Update with new image if this is a service update
           if [ "${{ github.event.client_payload.service }}" = "frontend" ]; then
-            FRONTEND_IMG="${{ github.event.client_payload.image }}"
+            sed -i "s|FRONTEND_IMAGE=.*|FRONTEND_IMAGE=${{ github.event.client_payload.image }}|" .env
           elif [ "${{ github.event.client_payload.service }}" = "backend" ]; then
-            BACKEND_IMG="${{ github.event.client_payload.image }}"
+            sed -i "s|BACKEND_IMAGE=.*|BACKEND_IMAGE=${{ github.event.client_payload.image }}|" .env
           fi
 
-          cat > .env << EOF
-          FRONTEND_IMAGE=${FRONTEND_IMG}
-          BACKEND_IMAGE=${BACKEND_IMG}
-          EOF
-
-          echo "Created .env file:"
-          cat .env
+          echo "Created .env file (Firebase vars hidden for security)"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
