@@ -14,13 +14,32 @@ jobs:
       - name: Create .env file directly
         run: |
           echo "📦 Creating .env file..."
+
+          # Set default images
+          FRONTEND_IMG="ghcr.io/memora-tiberiusgh/frontend:latest"
+          BACKEND_IMG="ghcr.io/memora-tiberiusgh/backend:latest"
+
+          # Update with new image if this is a service update
+          if [ "${{ github.event.client_payload.service }}" = "frontend" ]; then
+            FRONTEND_IMG="${{ github.event.client_payload.image }}"
+          elif [ "${{ github.event.client_payload.service }}" = "backend" ]; then
+            BACKEND_IMG="${{ github.event.client_payload.image }}"
+          fi
+
           cat > .env << EOF
-          FRONTEND_IMAGE=${{ github.event.client_payload.image }}
-          BACKEND_IMAGE=ghcr.io/memora-tiberiusgh/backend:latest
+          FRONTEND_IMAGE=${FRONTEND_IMG}
+          BACKEND_IMAGE=${BACKEND_IMG}
           EOF
 
           echo "Created .env file:"
           cat .env
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy updated services
         run: |
