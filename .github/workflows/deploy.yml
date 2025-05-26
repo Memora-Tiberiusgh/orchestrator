@@ -49,12 +49,8 @@ jobs:
           # Pull latest images
           docker-compose pull
 
-          # Stop and remove containers, then recreate (optional)
+          # Stop and remove containers, then recreate
           docker-compose down
           docker-compose up -d
 
           echo "✅ Deployment completed!"
-
-      - name: Cleanup sensitive files
-        run: |
-          rm .env
