@@ -1,0 +1,27 @@
+name: Deploy Services
+
+on:
+  repository_dispatch:
+    types: [frontend-updated, backend-updated]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout orchestrator config
+        uses: actions/checkout@v4
+
+      - name: Update service image
+        run: |
+          echo "📦 Updating ${{ github.event.client_payload.service }}"
+          echo "🏷️  New image: ${{ github.event.client_payload.image }}"
+
+          # Update docker-compose.yml with new image
+          sed -i "s|# ${{ github.event.client_payload.service }}_image|image: ${{ github.event.client_payload.image }}|" docker-compose.yml
+
+      - name: Deploy updated services
+        run: |
+          echo "🚀 Deploying services..."
+          docker-compose pull
+          docker-compose up -d
+          echo "✅ Deployment completed!"
