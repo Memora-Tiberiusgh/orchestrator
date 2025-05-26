@@ -11,19 +11,16 @@ jobs:
       - name: Checkout orchestrator config
         uses: actions/checkout@v4
 
-      - name: Create .env file from secret
+      - name: Create .env file directly
         run: |
-          echo "📦 Creating .env file from GitHub secret..."
+          echo "📦 Creating .env file..."
+          cat > .env << EOF
+          FRONTEND_IMAGE=${{ github.event.client_payload.image }}
+          BACKEND_IMAGE=ghcr.io/memora-tiberiusgh/backend:latest
+          EOF
 
-          # Create .env file from secret (just like GitLab)
-          echo '${{ secrets.ENV_FILE }}' > .env
-
-          # Update the specific service image if this is an update
-          if [ "${{ github.event.client_payload.service }}" = "frontend" ]; then
-            sed -i "s|FRONTEND_IMAGE=.*|FRONTEND_IMAGE=${{ github.event.client_payload.image }}|" .env
-          elif [ "${{ github.event.client_payload.service }}" = "backend" ]; then
-            sed -i "s|BACKEND_IMAGE=.*|BACKEND_IMAGE=${{ github.event.client_payload.image }}|" .env
-          fi
+          echo "Created .env file:"
+          cat .env
 
       - name: Deploy updated services
         run: |
