@@ -4,6 +4,10 @@ on:
   repository_dispatch:
     types: [frontend-updated, backend-updated]
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   deploy:
     runs-on: self-hosted
