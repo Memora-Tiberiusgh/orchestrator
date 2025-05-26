@@ -11,13 +11,19 @@ jobs:
       - name: Checkout orchestrator config
         uses: actions/checkout@v4
 
-      - name: Update service image
+      - name: Create .env file from secret
         run: |
-          echo "📦 Updating ${{ github.event.client_payload.service }}"
-          echo "🏷️  New image: ${{ github.event.client_payload.image }}"
+          echo "📦 Creating .env file from GitHub secret..."
 
-          # Update docker-compose.yml with new image
-          sed -i "s|# ${{ github.event.client_payload.service }}_image|image: ${{ github.event.client_payload.image }}|" docker-compose.yml
+          # Create .env file from secret (just like GitLab)
+          echo '${{ secrets.ENV_FILE }}' > .env
+
+          # Update the specific service image if this is an update
+          if [ "${{ github.event.client_payload.service }}" = "frontend" ]; then
+            sed -i "s|FRONTEND_IMAGE=.*|FRONTEND_IMAGE=${{ github.event.client_payload.image }}|" .env
+          elif [ "${{ github.event.client_payload.service }}" = "backend" ]; then
+            sed -i "s|BACKEND_IMAGE=.*|BACKEND_IMAGE=${{ github.event.client_payload.image }}|" .env
+          fi
 
       - name: Deploy updated services
         run: |
@@ -25,3 +31,7 @@ jobs:
           docker-compose pull
           docker-compose up -d
           echo "✅ Deployment completed!"
+
+      - name: Cleanup sensitive files
+        run: |
+          rm .env
