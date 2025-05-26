@@ -18,6 +18,8 @@ services:
     environment:
       - PORT=8186
       - DB_CONNECTION_STRING=mongodb://mongodb:27017/memora
+    env_file:
+      - .env
     ports:
       - "8186:8186"
     depends_on:
