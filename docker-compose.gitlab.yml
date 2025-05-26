@@ -13,7 +13,7 @@ services:
       - memora-network
 
   backend:
-    image: ${BACKEND_IMAGE}
+    image: gitlab.lnu.se:5050/1dv613/student/tg222hh/memora/memora_back_end:latest
     container_name: memora-backend
     environment:
       - PORT=8186
@@ -29,7 +29,7 @@ services:
       - memora-network
 
   frontend:
-    image: ${FRONTEND_IMAGE}
+    image: gitlab.lnu.se:5050/1dv613/student/tg222hh/memora/memora_front_end:latest
     container_name: memora-frontend
     ports:
       - "5173:3000"
