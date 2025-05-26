@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: Memora-org
     steps:
       - name: Checkout orchestrator config
         uses: actions/checkout@v4
