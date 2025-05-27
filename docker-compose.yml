@@ -1,11 +1,11 @@
-version: "3.8"
+version: '3.8'
 
 services:
   mongodb:
     image: mongo:latest
     container_name: memora-mongodb
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongodb_data:/data/db
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8186:8186"
+      - '8186:8186'
     depends_on:
       - mongodb
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
     image: ${FRONTEND_IMAGE}
     container_name: memora-frontend
     ports:
-      - "5173:3000"
+      - '5173:3000'
     environment:
       - NODE_ENV=production
     depends_on:
