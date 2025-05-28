@@ -2,6 +2,8 @@
 
 Docker Compose orchestration for the complete Memora application stack - a streamlined setup for running the application with all its components.
 
+🌐 **Live Demo**: [memora.tiberiusgh.com](https://memora.tiberiusgh.com)
+
 ## Architecture Overview
 
 ![Memora Architecture](./memora_architecture.png)
