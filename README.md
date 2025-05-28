@@ -163,35 +163,7 @@ server {
 }
 ```
 
-### SSL/HTTPS Configuration (Recommended)
-
-For production, add SSL certificate support:
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-
-    ssl_certificate /path/to/your/certificate.crt;
-    ssl_certificate_key /path/to/your/private.key;
-
-    # SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
-    ssl_prefer_server_ciphers off;
-
-    # Your location blocks here (same as above)
-    location /api/ { ... }
-    location / { ... }
-}
-
-# Redirect HTTP to HTTPS
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$host$request_uri;
-}
-```
+**Note:** For production environments, you should configure SSL/HTTPS certificates. This involves setting up SSL certificates, configuring HTTPS listeners (port 443), and redirecting HTTP traffic to HTTPS. The specific SSL configuration will depend on your certificate provider and security requirements.
 
 ## Container Overview
 
