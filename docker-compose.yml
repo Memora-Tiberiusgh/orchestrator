@@ -22,6 +22,8 @@ services:
       - .env
     ports:
       - '8186:8186'
+    volumes:
+      - submission_logs:/backend/logs
     depends_on:
       - mongodb
     restart: unless-stopped
@@ -43,6 +45,7 @@ services:
 
 volumes:
   mongodb_data:
+  submission_logs:
 
 networks:
   memora-network:
